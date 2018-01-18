@@ -3,7 +3,9 @@
 # usage: fasttext10cv.bash
 # 20180116 erikt(at)xs4all.nl
 
-FASTTEXT=$HOME/software/fastText/fasttext
+FASTTEXTDIR=$HOME/software/fastText
+FASTTEXT=$FASTTEXTDIR/fasttext
+WIKIVEC=$FASTTEXTDIR/wiki.nl.vec
 BASETRAIN=TRAIN.fasttext
 TMPFILE=fasttext10cv.bash.$$.$RANDOM
 TRAIN=$TMPFILE.train
@@ -20,7 +22,7 @@ do
    done
    TEST=$BASETRAIN.$I
    $FASTTEXT supervised -input $TRAIN -output $MODEL -dim $DIM \
-      -minCount $MINCOUNT > /dev/null 2> /dev/null
+      -minCount $MINCOUNT -pretrainedVectors $WIKIVEC > /dev/null 2> /dev/null
    $FASTTEXT predict $MODEL.bin $TEST > $TEST.labels
    rm -f $TRAIN $MODEL.bin
 done
