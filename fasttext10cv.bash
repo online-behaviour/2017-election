@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 # fasttext10cv.bash: run 10cv experiment with fasttext
-# usage: fasttext10cv.bash
+# usage: fasttext10cv.bash [ -w ]
 # 20180116 erikt(at)xs4all.nl
 
 FASTTEXTDIR=$HOME/software/fastText
@@ -21,8 +21,14 @@ do
       if [ $I != $J ]; then cat $BASETRAIN.$J >>$TRAIN; fi
    done
    TEST=$BASETRAIN.$I
-   $FASTTEXT supervised -input $TRAIN -output $MODEL -dim $DIM \
-      -minCount $MINCOUNT -pretrainedVectors $WIKIVEC > /dev/null 2> /dev/null
+   if [ "$1" == "-w" ]
+   then
+      $FASTTEXT supervised -input $TRAIN -output $MODEL -dim $DIM \
+         -minCount $MINCOUNT -pretrainedVectors $WIKIVEC > /dev/null 2> /dev/null
+   else
+      $FASTTEXT supervised -input $TRAIN -output $MODEL -dim $DIM \
+         -minCount $MINCOUNT > /dev/null 2> /dev/null
+   fi
    $FASTTEXT predict $MODEL.bin $TEST > $TEST.labels
    rm -f $TRAIN $MODEL.bin
 done
