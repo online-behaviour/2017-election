@@ -9,17 +9,26 @@ WIKIVEC=$FASTTEXTDIR/wiki.nl.vec
 EVAL=$HOME/projects/online-behaviour/machine-learning/eval.py
 TRAIN=TRAIN-TEST.fasttext
 TEST=TEST.fasttext
-if [ "$1" == "-s" ]
-then
-   TEST=selected.fasttext
-   shift
-fi
 TMPFILE=fasttext.bash.$$.$RANDOM
 MODEL=$TMPFILE.model
 DIM=300
 MINCOUNT=5
+USEWIKIVEC=""
 
-if [ "$1" == "-w" ]
+while getopts ":T:t:w" opt; do
+   case $opt in
+   T) TRAIN=$OPTARG
+      ;;
+   t) TEST=$OPTARG
+      ;;
+   w) USEWIKIVEC=1
+      ;;
+   \?) echo $COMMAND ": invalid option " $opt
+      ;;
+   esac
+done
+
+if [ "$USEWIKIVEC" != "" ]
 then
    $FASTTEXT supervised -input $TRAIN -output $MODEL -dim $DIM \
       -minCount $MINCOUNT -pretrainedVectors $WIKIVEC > /dev/null 2> /dev/null
@@ -28,7 +37,8 @@ else
       -minCount $MINCOUNT > /dev/null 2> /dev/null
 fi
 $FASTTEXT predict $MODEL.bin $TEST | tee $TEST.labels |\
-   paste -d' ' - $TEST | cut -d' ' -f1,2 | rev | $EVAL
+   paste -d' ' - $TEST | cut -d' ' -f1,2 |\
+   sed 's/^\(.*\) \(.*\)$/\2 \1/' | $EVAL
 rm -f $MODEL.bin
 
 exit 0
