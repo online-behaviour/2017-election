@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Tweets</title>
+</head>
+<body>
+    <p>
+    <form action="http://0.0.0.0:5000/" method="post">
+    <strong>Human label</strong>:
+    <select name="human" onchange="this.form.submit()">
+        <option value=""></option>
+        {% for l in labels|dictsort(false,'value') %}
+            {% if l[1] != "ERROR" %}
+                <option value="{{ l[1] }}" 
+                {% if l[1] == human %} 
+                selected 
+                {% endif %}
+                >{{ l[1] }}</option>
+            {% endif %}
+        {% endfor %}
+    </select>
+    <strong>FastText label</strong>:
+    <select name="fasttext" onchange="this.form.submit()">
+        <option value=""></option>
+        {% for l in labels|dictsort(false,'value') %}
+	    {% if l[1] != "ERROR" %}
+                <option value="{{ l[1] }}" 
+                {% if l[1] == fasttext %} 
+                selected 
+                {% endif %}
+                >{{ l[1] }}</option>
+            {% endif %}
+	{% endfor %}
+        <option value="SAMEDEEP"
+  	    {% if fasttext == "SAMEDEEP" %}
+            selected
+            {% endif %}
+	>Same as DeepLearn</option>
+        <option value="DIFFDEEP"
+  	    {% if fasttext == "DIFFDEEP" %}
+            selected
+            {% endif %}
+	>Different from DeepLearn</option>
+    </select>
+    <strong>DeepLearn label</strong>:
+    <select name="deeplearn" onchange="this.form.submit()">
+        <option value=""></option>
+        {% for l in labels|dictsort(false,'value') %}
+            {% if l[1] != "ERROR" %}
+                <option value="{{ l[1] }}" 
+                {% if l[1] == deeplearn %} 
+                selected 
+                {% endif %}
+                >{{ l[1] }}</option>
+            {% endif %}
+        {% endfor %}
+        <option value="SAMEFAST"
+  	    {% if deeplearn == "SAMEFAST" %}
+            selected
+            {% endif %}
+	>Same as FastText</option>
+	<option value="DIFFFAST"
+  	    {% if deeplearn == "DIFFFAST" %}
+            selected
+            {% endif %}
+	>Different from FastText</option>
+    </select>
+    </form>
+    <p>
+    <hr>
+    Found: {{ nbrOfSelected }} items
+    <hr>
+    <p>
+    <font size="3">
+    <table>
+        <tr>
+	    <th align="left"></th>
+	    {% if show[0] %}
+	    <th align="left">Human</th>
+	    {% endif %}
+	    {% if show[1] %}
+	    <th align="left">FastText</th>
+	    {% endif %}
+	    {% if show[2] %}
+	    <th align="left">DeepLearn</th>
+	    {% endif %}
+	    {% if show[3] %}
+	    <th align="left">ID</th>
+	    {% endif %}
+	    {% if show[4] %}
+	    <th align="left">Date</th>
+	    {% endif %}
+	    {% if show[5] %}
+	    <th align="left">User</th>
+	    {% endif %}
+	    {% if show[6] %}
+	    <th align="left">Tweet</th>
+	    {% endif %}
+	</tr>
+    {% for d in range(0,dataLength) %}
+    {% if d in selected %}
+        <tr>
+	    <td align="right">{{ d }}.</td>
+	    {% if show[0] %}
+	    <td>
+		<select>
+		    <option value="" selected></option>
+		    {% for l in labels|dictsort(false,'value') %}
+		    {% if l[1] != "ERROR" %}
+		    <option value="{{ l[1] }}">{{ l[1] }}</option>
+		    {% endif %}
+		    {% endfor %}
+	        </select>
+	    </td>
+	    {% endif %}
+	    {% if show[1] %}
+	    <td>{{ labels[data[d][0]] }}</td>
+	    {% endif %}
+	    {% if show[2] %}
+	    <td>{{ labels[data[d][1]] }}</td>
+	    {% endif %}
+	    {% if show[3] %}
+	    <td>{{ data[d][2] }}</td>
+	    {% endif %}
+	    {% if show[4] %}
+	    <td>{{ data[d][3] }}</td>
+	    {% endif %}
+	    {% if show[5] %}
+	    <td>{{ data[d][4] }}</td>
+	    {% endif %}
+	    {% if show[6] %}
+	    <td><a href="http://twitter.com/{{ d[4] }}/status/{{ d[2] }}">{{ data[d][5] }}</a></td>
+	    {% endif %}
+	</tr>
+    {% endif %}
+    {% endfor %}
+    </table>
+    </font>
+    <hr>
+</body>
+</html>
