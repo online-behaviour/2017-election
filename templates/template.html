@@ -65,6 +65,16 @@
             {% endif %}
 	>Different from FastText</option>
     </select>
+    <strong>Fields</strong>:
+    <select name="fields" multiple>
+        {% for f in range(0,7) %}
+            <option value="{{ fieldsShow[f] }}"
+            {% if fieldsShow[f] %}
+            selected
+            {% endif %}
+            >{{ fieldsNames[f] }}</option>
+        {% endfor %}
+    </select>
     </form>
     <p>
     <hr>
@@ -75,33 +85,33 @@
     <table>
         <tr>
 	    <th align="left"></th>
-	    {% if show[0] %}
+	    {% if fieldsShow[0] %}
 	    <th align="left">Human</th>
 	    {% endif %}
-	    {% if show[1] %}
+	    {% if fieldsShow[1] %}
 	    <th align="left">FastText</th>
 	    {% endif %}
-	    {% if show[2] %}
+	    {% if fieldsShow[2] %}
 	    <th align="left">DeepLearn</th>
 	    {% endif %}
-	    {% if show[3] %}
+	    {% if fieldsShow[3] %}
 	    <th align="left">ID</th>
 	    {% endif %}
-	    {% if show[4] %}
+	    {% if fieldsShow[4] %}
 	    <th align="left">Date</th>
 	    {% endif %}
-	    {% if show[5] %}
+	    {% if fieldsShow[5] %}
 	    <th align="left">User</th>
 	    {% endif %}
-	    {% if show[6] %}
+	    {% if fieldsShow[6] %}
 	    <th align="left">Tweet</th>
 	    {% endif %}
 	</tr>
     {% for d in range(0,dataLength) %}
     {% if d in selected %}
         <tr>
-	    <td align="right">{{ d }}.</td>
-	    {% if show[0] %}
+	    <td align="right">{{ d+1 }}.</td>
+	    {% if fieldsShow[0] %}
 	    <td>
 		<select>
 		    <option value="" selected></option>
@@ -113,22 +123,22 @@
 	        </select>
 	    </td>
 	    {% endif %}
-	    {% if show[1] %}
+	    {% if fieldsShow[1] %}
 	    <td>{{ labels[data[d][0]] }}</td>
 	    {% endif %}
-	    {% if show[2] %}
+	    {% if fieldsShow[2] %}
 	    <td>{{ labels[data[d][1]] }}</td>
 	    {% endif %}
-	    {% if show[3] %}
+	    {% if fieldsShow[3] %}
 	    <td>{{ data[d][2] }}</td>
 	    {% endif %}
-	    {% if show[4] %}
+	    {% if fieldsShow[4] %}
 	    <td>{{ data[d][3] }}</td>
 	    {% endif %}
-	    {% if show[5] %}
+	    {% if fieldsShow[5] %}
 	    <td>{{ data[d][4] }}</td>
 	    {% endif %}
-	    {% if show[6] %}
+	    {% if fieldsShow[6] %}
 	    <td><a href="http://twitter.com/{{ d[4] }}/status/{{ d[2] }}">{{ data[d][5] }}</a></td>
 	    {% endif %}
 	</tr>

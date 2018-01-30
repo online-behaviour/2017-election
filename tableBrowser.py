@@ -18,7 +18,8 @@ labels = {"0":"ERROR","1":"C TRAIL","2":"PROMOTION","3":"C ACTION",
         "4":"VOTE CALL","5":"NEWS","6":"STANCE","7":"CRITIQUE",8:"INPUT",
         "9":"ADVICE", "10":"ACKNOWL","11":"PERSONAL","12":"OTHER","13":"ERROR" }
 # human, fasttext, deeplearn, id, date, user, tweet
-show = [True,True,True,False,False,False,True]
+fieldsShow = [True,True,True,False,False,False,True]
+fieldsNames = ["Human","FastText","DeepLearn","Id","Date","User","Tweet"]
 nbrOfItems = 0
 
 def readData(inFileName):
@@ -64,5 +65,5 @@ def process():
              (human == "" or human == labels[data[d][2]])):
             if nbrOfSelected < MAXSHOW: selected[d] = True 
             nbrOfSelected += 1
-    return(render_template('template.html', data=data, labels=labels, show=show , fasttext=fasttext, deeplearn=deeplearn, human=human, selected=selected, nbrOfSelected=nbrOfSelected, dataLength=len(data)))
+    return(render_template('template.html', data=data, labels=labels, fieldsShow=fieldsShow , fieldsNames=fieldsNames, fasttext=fasttext, deeplearn=deeplearn, human=human, selected=selected, nbrOfSelected=nbrOfSelected, dataLength=len(data)))
 
