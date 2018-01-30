@@ -66,86 +66,78 @@
 	>Different from FastText</option>
     </select>
     <strong>Fields</strong>:
-    <select name="fields" multiple>
+    <select name="fields" onchange="this.form.submit()">
+        <option value=""></option>
         {% for f in range(0,7) %}
-            <option value="{{ fieldsShow[f] }}"
+	<option value="{{ fieldsNames[f] }}">
             {% if fieldsShow[f] %}
-            selected
+            SHOWN
+	    {% else %}
+	    HIDDEN
             {% endif %}
-            >{{ fieldsNames[f] }}</option>
+            {{ fieldsNames[f] }}</option>
         {% endfor %}
     </select>
-    </form>
     <p>
     <hr>
     Found: {{ nbrOfSelected }} items
     <hr>
     <p>
     <font size="3">
+    <select name="data" onchange="this.form.submit()">
     <table>
         <tr>
 	    <th align="left"></th>
-	    {% if fieldsShow[0] %}
-	    <th align="left">Human</th>
+	{% for value in fieldsShow %}
+	    {% if value %}
+	    <th align="left">{{ fieldsNames[loop.index0] }}</th>
 	    {% endif %}
-	    {% if fieldsShow[1] %}
-	    <th align="left">FastText</th>
-	    {% endif %}
-	    {% if fieldsShow[2] %}
-	    <th align="left">DeepLearn</th>
-	    {% endif %}
-	    {% if fieldsShow[3] %}
-	    <th align="left">ID</th>
-	    {% endif %}
-	    {% if fieldsShow[4] %}
-	    <th align="left">Date</th>
-	    {% endif %}
-	    {% if fieldsShow[5] %}
-	    <th align="left">User</th>
-	    {% endif %}
-	    {% if fieldsShow[6] %}
-	    <th align="left">Tweet</th>
-	    {% endif %}
+	{% endfor %}
 	</tr>
-    {% for d in range(0,dataLength) %}
-    {% if d in selected %}
+    {% for item in data %}
+    {% if loop.index0 in selected %}
+    {% set key = loop.index0 %}
         <tr>
-	    <td align="right">{{ d+1 }}.</td>
+	    <td align="right">{{ loop.index0+1 }}.</td>
 	    {% if fieldsShow[0] %}
 	    <td>
-		<select>
-		    <option value="" selected></option>
-		    {% for l in labels|dictsort(false,'value') %}
-		    {% if l[1] != "ERROR" %}
-		    <option value="{{ l[1] }}">{{ l[1] }}</option>
-		    {% endif %}
-		    {% endfor %}
-	        </select>
+	       <option value=""></option>
+	       {% for l in labels|dictsort(false,'value') %}
+	       {% if l[1] != "ERROR" %}
+	       <option value="{{ key ~ " " ~ l[1] }}"
+	       {% if humanLabels[loop.index0] == l[1] %}
+	       selected
+	       {% endif %}
+	       >{{ l[1] }}</option>
+	       {% endif %}
+	       {% endfor %}
 	    </td>
 	    {% endif %}
 	    {% if fieldsShow[1] %}
-	    <td>{{ labels[data[d][0]] }}</td>
+	    <td>{{ labels[item[0]] }}</td>
 	    {% endif %}
 	    {% if fieldsShow[2] %}
-	    <td>{{ labels[data[d][1]] }}</td>
+	    <td>{{ labels[item[1]] }}</td>
 	    {% endif %}
 	    {% if fieldsShow[3] %}
-	    <td>{{ data[d][2] }}</td>
+	    <td>{{ item[2] }}</td>
 	    {% endif %}
 	    {% if fieldsShow[4] %}
-	    <td>{{ data[d][3] }}</td>
+	    <td>{{ item[3] }}</td>
 	    {% endif %}
 	    {% if fieldsShow[5] %}
-	    <td>{{ data[d][4] }}</td>
+	    <td>{{ item[4] }}</td>
 	    {% endif %}
 	    {% if fieldsShow[6] %}
-	    <td><a href="http://twitter.com/{{ d[4] }}/status/{{ d[2] }}">{{ data[d][5] }}</a></td>
+	    <td><a href="http://twitter.com/{{ item[4] }}/status/{{ item[2] }}">{{ item[5] }}</a></td>
 	    {% endif %}
 	</tr>
     {% endif %}
     {% endfor %}
     </table>
+    </select>
     </font>
     <hr>
+    </form>
 </body>
 </html>
