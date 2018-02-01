@@ -80,11 +80,19 @@
     </select>
     <p>
     <hr>
-    Found: {{ nbrOfSelected }} items
+    Found: {{ nbrOfSelected }} items.
+    Page:
+    {% for p in range(minPage,maxPage+1) %}
+	{% if p == page %}
+	<strong>{{ p }}</strong>
+	{% else %}
+	<a href="/?page={{ p }}&fasttext={{ fasttext }}&deeplearn={{ deeplearn }}&human={{ human }}">{{ p }}</a>
+	{% endif %}
+    {% endfor %}
+    {% if nbrOfSelected > 0 %}
     <hr>
     <p>
     <font size="3">
-    <select name="data" onchange="this.form.submit()">
     <table>
         <tr>
 	    <th align="left"></th>
@@ -94,23 +102,27 @@
 	    {% endif %}
 	{% endfor %}
 	</tr>
+    {% set index = [] %}
     {% for item in data %}
-    {% if loop.index0 in selected %}
-    {% set key = loop.index0 %}
+        {% if loop.index0 in selected %}
+        {% set key = loop.index0 %}
+        {% set __ = index.append(1) %}
         <tr>
-	    <td align="right">{{ loop.index0+1 }}.</td>
+	    <td align="right">{{ key+1 }}.</td>
 	    {% if fieldsShow[0] %}
 	    <td>
+	       <select name="data{{ index|length }}" onchange="this.form.submit()">
 	       <option value=""></option>
 	       {% for l in labels|dictsort(false,'value') %}
 	       {% if l[1] != "ERROR" %}
 	       <option value="{{ key ~ " " ~ l[1] }}"
-	       {% if humanLabels[loop.index0] == l[1] %}
+	       {% if humanLabels[key] == l[1] %}
 	       selected
 	       {% endif %}
-	       >{{ l[1] }}</option>
+		>{{ l[1] }}</option>
 	       {% endif %}
 	       {% endfor %}
+	       </select>
 	    </td>
 	    {% endif %}
 	    {% if fieldsShow[1] %}
@@ -132,12 +144,22 @@
 	    <td><a href="http://twitter.com/{{ item[4] }}/status/{{ item[2] }}">{{ item[5] }}</a></td>
 	    {% endif %}
 	</tr>
-    {% endif %}
+        {% endif %}
     {% endfor %}
     </table>
-    </select>
     </font>
     <hr>
+    Found: {{ nbrOfSelected }} items.
+    Page:
+    {% for p in range(minPage,maxPage+1) %}
+	{% if p == page %}
+	<strong>{{ p }}</strong>
+	{% else %}
+	<a href="/?page={{ p }}&fasttext={{ fasttext }}&deeplearn={{ deeplearn }}&human={{ human }}">{{ p }}</a>
+	{% endif %}
+    {% endfor %}
+    <hr>
+    {% endif %}
     </form>
 </body>
 </html>

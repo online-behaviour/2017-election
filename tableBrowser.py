@@ -14,7 +14,9 @@ import sys
 MAXSHOW = 10
 DATAFILENAME = "data/2017-tweets.csv"
 HUMANLABELFILE = "data/human-labels.txt"
+LOGFILE = "data/logfile"
 DATECOLUMN = 3
+BORDERPAGES = 2
 UNKNOWN = ""
 labels = {"0":"ERROR","1":"C TRAIL","2":"PROMOTION","3":"C ACTION",
         "4":"VOTE CALL","5":"NEWS","6":"STANCE","7":"CRITIQUE",8:"INPUT",
@@ -54,12 +56,25 @@ def storeHumanLabel(index,label):
     outFile.close()
     return()
 
-class myForm(Form):
-    fasttext = StringField("fasttext",[validators.Length(min=0,max=100)])
-    deeplearn = StringField("deeplearn",[validators.Length(min=0,max=100)])
-    human = StringField("deeplearn",[validators.Length(min=0,max=100)])
-    fields= StringField("fields",[validators.Length(min=0,max=100)])
-    data = StringField("data",[validators.Length(min=0,max=100)])
+def log(message):
+    outFile = open(LOGFILE,"a")
+    outFile.write(message+"\n")
+    outFile.close()
+    return()
+
+def computePageBoundaries(nbrOfSelected,page):
+    minPage = page-BORDERPAGES
+    maxPage = page+BORDERPAGES
+    lastPage = 1+int((nbrOfSelected-1)/MAXSHOW)
+    if minPage < 1: 
+        maxPage = maxPage+(1-minPage)
+        minPage = 1
+    if maxPage > lastPage:
+        minPage = minPage-(maxPage-lastPage)
+        maxPage = lastPage
+    if minPage < 1 :
+        minPage = 1
+    return(minPage,maxPage)
 
 app = Flask(__name__)
 data, humanLabels = readData(DATAFILENAME)
@@ -70,24 +85,36 @@ def process():
     fasttext = ""
     deeplearn = ""
     human = ""
+    page = 1
     selected = {}
     nbrOfSelected = 0
-    form = myForm(request.form)
-    if request.method == "POST" and form.validate():
-        if form.fasttext.data != "": fasttext = form.fasttext.data
-        if form.deeplearn.data != "": deeplearn = form.deeplearn.data
-        if form.human.data != "": human = form.human.data
-        if form.fields.data != "":
+    form = request.form
+    if request.method == "GET": # and form.validate():
+        if "page" in request.args: page = int(request.args["page"])
+        if "fasttext" in request.args: fasttext = request.args["fasttext"]
+        if "deeplearn" in request.args: deeplearn = request.args["deeplearn"]
+        if "human" in request.args: human = request.args["human"]
+    if request.method == "POST": # and form.validate():
+        if form["fasttext"] != "": fasttext = form["fasttext"]
+        if form["deeplearn"] != "": deeplearn = form["deeplearn"]
+        if form["human"] != "": human = form["human"]
+        log("postcheck 1 "+fasttext)
+        if form["fields"] != "":
             for i in range(0,len(fieldsNames)):
-                if fieldsNames[i] == form.fields.data:
+                if fieldsNames[i] == form["fields"]:
                     if fieldsShow[i]: fieldsShow[i] = False
                     else: fieldsShow[i] = True
-        if form.data.data != "":
-            fields = form.data.data.split()
-            index = int(fields.pop(0))
-            label = " ".join(fields)
-            humanLabels[index] = label
-            storeHumanLabel(index,form.data.data)
+        log("postcheck 2 "+fasttext)
+        for i in range(1,MAXSHOW+1):
+            key = "data"+str(i)
+            if key in form and form[key] != "":
+                fields = form[key].split()
+                index = int(fields.pop(0))
+                label = " ".join(fields)
+                if humanLabels[index] != label:
+                    humanLabels[index] = label
+                    storeHumanLabel(index,label)
+        log("postcheck 3 "+fasttext)
     for d in range(0,len(data)):
         if ((fasttext == "" or fasttext == labels[data[d][0]] or
              (fasttext == "SAMEDEEP" and labels[data[d][0]] == labels[data[d][1]]) or
@@ -95,8 +122,12 @@ def process():
              (deeplearn == "" or deeplearn == labels[data[d][1]] or
               (deeplearn == "SAMEFAST" and labels[data[d][1]] == labels[data[d][0]]) or
               (deeplearn == "DIFFFAST" and labels[data[d][1]] != labels[data[d][0]])) and
-             (human == "" or human == labels[data[d][2]])):
-            if nbrOfSelected < MAXSHOW: selected[d] = True 
+             (human == "" or human == humanLabels[d])):
+            if nbrOfSelected >= MAXSHOW*(page-1) and \
+               nbrOfSelected < MAXSHOW*page: selected[d] = True 
             nbrOfSelected += 1
-    return(render_template('template.html', data=data, labels=labels, fieldsShow=fieldsShow , fieldsNames=fieldsNames, fasttext=fasttext, deeplearn=deeplearn, human=human, selected=selected, nbrOfSelected=nbrOfSelected, humanLabels=humanLabels))
+    log("postcheck 4 "+fasttext)
+    minPage, maxPage = computePageBoundaries(nbrOfSelected,page)
+    log("postcheck 5 "+fasttext)
+    return(render_template('template.html', data=data, labels=labels, fieldsShow=fieldsShow , fieldsNames=fieldsNames, fasttext=fasttext, deeplearn=deeplearn, human=human, selected=selected, nbrOfSelected=nbrOfSelected, humanLabels=humanLabels, page=page, minPage=minPage, maxPage=maxPage))
 
