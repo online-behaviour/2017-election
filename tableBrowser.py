@@ -34,7 +34,7 @@ nbrOfItems = 0
 def readData(inFileName):
     data = []
     humanLabels = []
-    inFile = open(inFileName,"r")
+    inFile = open(inFileName,"r",encoding="utf-8")
     csvreader = csv.reader(inFile,delimiter=',',quotechar='"')
     lineNbr = 0
     for row in csvreader:
@@ -47,7 +47,7 @@ def readData(inFileName):
     return(data,humanLabels)
 
 def readHumanLabels(humanLabels):
-    inFile = open(HUMANLABELFILE,"r")
+    inFile = open(HUMANLABELFILE,"r",encoding="utf-8")
     for line in inFile:
         fields = line.rstrip().split()
         username = fields.pop(0)
@@ -60,7 +60,7 @@ def readHumanLabels(humanLabels):
 
 def readUsers():
     users = {}
-    inFile = open(USERFILE,"r")
+    inFile = open(USERFILE,"r",encoding="utf-8")
     for line in inFile:
         fields = line.rstrip().split(":")
         username = fields.pop(0)
@@ -71,13 +71,13 @@ def readUsers():
 
 def storeHumanLabel(index,label,username):
     date = datetime.datetime.today().strftime("%Y%m%d%H%M%S")
-    outFile = open(HUMANLABELFILE,"a")
+    outFile = open(HUMANLABELFILE,"a",encoding="utf-8")
     outFile.write(username+" "+date+" "+str(index)+" "+label+"\n")
     outFile.close()
     return()
 
 def log(message):
-    outFile = open(LOGFILE,"a")
+    outFile = open(LOGFILE,"a",encoding="utf-8")
     outFile.write(message+"\n")
     outFile.close()
     return()
