@@ -4,8 +4,11 @@
     <title>Tweets</title>
 </head>
 <body>
+    {% set fieldsOrder = ["Human","FastText","DeepLearn","FastText+","DeepLearn+","Id","Date","User","Tweet"] %}
+    {% set pageSizes = ["10","25","50","100"] %}
     <p>
-    <form action="http://0.0.0.0:5000/" method="post">
+    <form action="{{ URL }}" method="post">
+    <input type="hidden" name="page" id="page" value="{{ page }}"/>
     <strong>Human label</strong>:
     <select name="human" onchange="this.form.submit()">
         <option value=""></option>
@@ -68,16 +71,28 @@
     <strong>Fields</strong>:
     <select name="fields" onchange="this.form.submit()">
         <option value=""></option>
-        {% for f in range(0,7) %}
-	<option value="{{ fieldsNames[f] }}">
-            {% if fieldsShow[f] %}
+        {% for key in fieldsOrder %}
+	<option value="{{ key }}">
+            {% if fieldsShow[key] %}
             SHOWN
 	    {% else %}
 	    HIDDEN
             {% endif %}
-            {{ fieldsNames[f] }}</option>
+            {{ key }}</option>
         {% endfor %}
     </select>
+    <strong>Page size</strong>:
+    <select name="size" onchange="this.form.submit()">
+        {% for key in pageSizes %}
+        <option value="{{ key }}"
+	{% if key|int == pageSize|int %}
+	selected
+	{% endif %}
+	>{{ key }}</option>
+        {% endfor %}
+    </select>
+    <strong>User</strong>: {{ username }}
+    (<a href="{{ URL }}?logout">logout</a>)
     <p>
     <hr>
     Found: {{ nbrOfSelected }} items.
@@ -86,9 +101,9 @@
 	{% if p == page %}
 	<strong>{{ p }}</strong>
 	{% else %}
-	<a href="/?page={{ p }}&fasttext={{ fasttext }}&deeplearn={{ deeplearn }}&human={{ human }}">{{ p }}</a>
+	<a href="{{ URL }}/?page={{ p }}&fasttext={{ fasttext }}&deeplearn={{ deeplearn }}&human={{ human }}">{{ p }}</a>
 	{% endif %}
-    {% endfor %}
+	{% endfor %}
     {% if nbrOfSelected > 0 %}
     <hr>
     <p>
@@ -96,9 +111,9 @@
     <table>
         <tr>
 	    <th align="left"></th>
-	{% for value in fieldsShow %}
-	    {% if value %}
-	    <th align="left">{{ fieldsNames[loop.index0] }}</th>
+	{% for key in fieldsOrder %}
+	    {% if fieldsShow[key] %}
+	    <th align="left">{{ key }}</th>
 	    {% endif %}
 	{% endfor %}
 	</tr>
@@ -109,10 +124,10 @@
         {% set __ = index.append(1) %}
         <tr>
 	    <td align="right">{{ key+1 }}.</td>
-	    {% if fieldsShow[0] %}
+	    {% if fieldsShow["Human"] %}
 	    <td>
 	       <select name="data{{ index|length }}" onchange="this.form.submit()">
-	       <option value=""></option>
+		       <option value="{{ key ~ " " }}"></option>
 	       {% for l in labels|dictsort(false,'value') %}
 	       {% if l[1] != "ERROR" %}
 	       <option value="{{ key ~ " " ~ l[1] }}"
@@ -125,23 +140,29 @@
 	       </select>
 	    </td>
 	    {% endif %}
-	    {% if fieldsShow[1] %}
+	    {% if fieldsShow["FastText"] %}
 	    <td>{{ labels[item[0]] }}</td>
 	    {% endif %}
-	    {% if fieldsShow[2] %}
+	    {% if fieldsShow["DeepLearn"] %}
 	    <td>{{ labels[item[1]] }}</td>
 	    {% endif %}
-	    {% if fieldsShow[3] %}
+	    {% if fieldsShow["FastText+"] %}
 	    <td>{{ item[2] }}</td>
 	    {% endif %}
-	    {% if fieldsShow[4] %}
+	    {% if fieldsShow["DeepLearn+"] %}
 	    <td>{{ item[3] }}</td>
 	    {% endif %}
-	    {% if fieldsShow[5] %}
+	    {% if fieldsShow["Id"] %}
 	    <td>{{ item[4] }}</td>
 	    {% endif %}
-	    {% if fieldsShow[6] %}
-	    <td><a href="http://twitter.com/{{ item[4] }}/status/{{ item[2] }}">{{ item[5] }}</a></td>
+	    {% if fieldsShow["Date"] %}
+	    <td>{{ item[5] }}</td>
+	    {% endif %}
+	    {% if fieldsShow["User"] %}
+	    <td>{{ item[6] }}</td>
+	    {% endif %}
+	    {% if fieldsShow["Tweet"] %}
+	    <td><a href="http://twitter.com/{{ item[6] }}/status/{{ item[4] }}">{{ item[7] }}</a></td>
 	    {% endif %}
 	</tr>
         {% endif %}

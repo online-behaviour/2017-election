@@ -1,4 +1,4 @@
-#!/usr/bin/python2 -W all
+#!/usr/bin/python3 -W all
 # tableBrowser: browse csv table with labeled tweets
 # usage: FLASK_APP=$PWD/tableBrowser.py; flask run
 # 20180124 erikt(at)xs4all.nl
@@ -6,24 +6,29 @@
 from flask import Flask
 from flask import render_template
 from flask import request
+from flask import redirect
+from flask import session
 from wtforms import Form, StringField, SelectField, PasswordField, validators
 import csv
+import datetime
+import hashlib
 import re
 import sys
 
-MAXSHOW = 10
-DATAFILENAME = "data/2017-tweets.csv"
-HUMANLABELFILE = "data/human-labels.txt"
-LOGFILE = "data/logfile"
-DATECOLUMN = 3
+URL = "http://0.0.0.0:5000/"
+BASEDIR = "/home/erikt/projects/online-behaviour/2017-election"
+DATAFILENAME = BASEDIR+"/data/2017-tweets.csv"
+HUMANLABELFILE = BASEDIR+"/data/human-labels.txt"
+USERFILE = BASEDIR+"/data/users.txt"
+LOGFILE = BASEDIR+"/data/logfile"
+DATECOLUMN = 5
 BORDERPAGES = 2
 UNKNOWN = ""
 labels = {"0":"ERROR","1":"C TRAIL","2":"PROMOTION","3":"C ACTION",
-        "4":"VOTE CALL","5":"NEWS","6":"STANCE","7":"CRITIQUE",8:"INPUT",
-        "9":"ADVICE", "10":"ACKNOWL","11":"PERSONAL","12":"OTHER","13":"ERROR" }
-# human, fasttext, deeplearn, id, date, user, tweet
-fieldsShow = [True,True,True,False,False,False,True]
-fieldsNames = ["Human","FastText","DeepLearn","Id","Date","User","Tweet"]
+          "4":"VOTE CALL","5":"NEWS","6":"STANCE","7":"CRITIQUE",
+          "8":"INPUT","9":"ADVICE", "10":"ACKNOWL","11":"PERSONAL",
+          "12":"OTHER","13":"ERROR" }
+fieldsShow = {"Human":True,"FastText":True,"DeepLearn":True,"FastText+":False,"DeepLearn+":False,"Id":False,"Date":False,"User":False,"Tweet":True}
 nbrOfItems = 0
 
 def readData(inFileName):
@@ -44,15 +49,30 @@ def readData(inFileName):
 def readHumanLabels(humanLabels):
     inFile = open(HUMANLABELFILE,"r")
     for line in inFile:
-        fields = line.split()
+        fields = line.rstrip().split()
+        username = fields.pop(0)
+        date = fields.pop(0)
         index = int(fields.pop(0))
         label = " ".join(fields)
         humanLabels[index] = label
+    inFile.close()
     return(humanLabels)
 
-def storeHumanLabel(index,label):
+def readUsers():
+    users = {}
+    inFile = open(USERFILE,"r")
+    for line in inFile:
+        fields = line.rstrip().split(":")
+        username = fields.pop(0)
+        password = fields.pop(0)
+        users[username] = password
+    inFile.close()
+    return(users)
+
+def storeHumanLabel(index,label,username):
+    date = datetime.datetime.today().strftime("%Y%m%d%H%M%S")
     outFile = open(HUMANLABELFILE,"a")
-    outFile.write(str(index)+" "+label+"\n")
+    outFile.write(username+" "+date+" "+str(index)+" "+label+"\n")
     outFile.close()
     return()
 
@@ -62,10 +82,10 @@ def log(message):
     outFile.close()
     return()
 
-def computePageBoundaries(nbrOfSelected,page):
+def computePageBoundaries(nbrOfSelected,page,pageSize):
     minPage = page-BORDERPAGES
     maxPage = page+BORDERPAGES
-    lastPage = 1+int((nbrOfSelected-1)/MAXSHOW)
+    lastPage = 1+int((nbrOfSelected-1)/pageSize)
     if minPage < 1: 
         maxPage = maxPage+(1-minPage)
         minPage = 1
@@ -74,60 +94,88 @@ def computePageBoundaries(nbrOfSelected,page):
         maxPage = lastPage
     if minPage < 1 :
         minPage = 1
-    return(minPage,maxPage)
+    if page > lastPage: page = lastPage
+    return(page,minPage,maxPage)
 
 app = Flask(__name__)
 data, humanLabels = readData(DATAFILENAME)
 humanLabels = readHumanLabels(humanLabels)
 
+def encode(password):
+    import random
+    algorithm = "sh1"
+    encoded = hashlib.sha1(password.encode("utf-8")).hexdigest()
+    return(encoded)
+
+@app.route("/login",methods=["GET","POST"])
+def login():
+    if request.method == "POST":
+        formdata = request.form
+        username = formdata["username"]
+        password = formdata["password"]
+        users = readUsers()
+        if username in users and users[username] == encode(password):
+            session["username"] = username
+            return(redirect(URL))
+        else: return(render_template("login.html", message="Incorrect user name or password"))
+    else:
+        return(render_template('login.html', message=""))
+
+def select(fasttext,deeplearn,human,labelF,labelD,labelH):
+    if ((fasttext == "" or fasttext == labelF or
+         (fasttext == "SAMEDEEP" and labelF == labelD) or
+         (fasttext == "DIFFDEEP" and labelF != labelD)) and
+         (deeplearn == "" or deeplearn == labelD or
+          (deeplearn == "SAMEFAST" and labelD == labelF) or
+          (deeplearn == "DIFFFAST" and labelD != labelF)) and
+         (human == "" or human == labelH)): return(True)
+    else: return(False)
+
 @app.route('/',methods=['GET','POST'])
 def process():
+    if not "username" in session: return(redirect("/login"))
+    username = session["username"]
     fasttext = ""
     deeplearn = ""
     human = ""
     page = 1
     selected = {}
     nbrOfSelected = 0
-    form = request.form
-    if request.method == "GET": # and form.validate():
-        if "page" in request.args: page = int(request.args["page"])
-        if "fasttext" in request.args: fasttext = request.args["fasttext"]
-        if "deeplearn" in request.args: deeplearn = request.args["deeplearn"]
-        if "human" in request.args: human = request.args["human"]
-    if request.method == "POST": # and form.validate():
-        if form["fasttext"] != "": fasttext = form["fasttext"]
-        if form["deeplearn"] != "": deeplearn = form["deeplearn"]
-        if form["human"] != "": human = form["human"]
-        log("postcheck 1 "+fasttext)
-        if form["fields"] != "":
-            for i in range(0,len(fieldsNames)):
-                if fieldsNames[i] == form["fields"]:
-                    if fieldsShow[i]: fieldsShow[i] = False
-                    else: fieldsShow[i] = True
-        log("postcheck 2 "+fasttext)
-        for i in range(1,MAXSHOW+1):
-            key = "data"+str(i)
-            if key in form and form[key] != "":
-                fields = form[key].split()
+    pageSize = 10
+    formdata = {}
+    if request.method == "GET": formdata = request.args
+    elif request.method == "POST": formdata = request.form
+    for key in formdata:
+        if key == "fasttext": fasttext = formdata["fasttext"]
+        elif key == "deeplearn": deeplearn = formdata["deeplearn"]
+        elif key == "human": human = formdata["human"]
+        elif key == "page" and formdata["page"] != "": 
+            page = int(formdata["page"])
+        elif key == "fields" and formdata["fields"] != "": 
+            fieldsShow[formdata["fields"]] = not fieldsShow[formdata["fields"]]
+        elif key == "size": pageSize = int(formdata["size"])
+        elif key == "logout":
+            session.pop("username")
+            return(redirect(URL))
+        elif re.match("^data",key):
+            if formdata[key] != "":
+                fields = formdata[key].split()
                 index = int(fields.pop(0))
                 label = " ".join(fields)
                 if humanLabels[index] != label:
                     humanLabels[index] = label
-                    storeHumanLabel(index,label)
-        log("postcheck 3 "+fasttext)
+                    storeHumanLabel(index,label,username)
+        else: pass # unknown key in formdata!
     for d in range(0,len(data)):
-        if ((fasttext == "" or fasttext == labels[data[d][0]] or
-             (fasttext == "SAMEDEEP" and labels[data[d][0]] == labels[data[d][1]]) or
-             (fasttext == "DIFFDEEP" and labels[data[d][0]] != labels[data[d][1]])) and
-             (deeplearn == "" or deeplearn == labels[data[d][1]] or
-              (deeplearn == "SAMEFAST" and labels[data[d][1]] == labels[data[d][0]]) or
-              (deeplearn == "DIFFFAST" and labels[data[d][1]] != labels[data[d][0]])) and
-             (human == "" or human == humanLabels[d])):
-            if nbrOfSelected >= MAXSHOW*(page-1) and \
-               nbrOfSelected < MAXSHOW*page: selected[d] = True 
+        if select(fasttext,deeplearn,human,labels[data[d][0]],labels[data[d][1]],humanLabels[d]):
             nbrOfSelected += 1
-    log("postcheck 4 "+fasttext)
-    minPage, maxPage = computePageBoundaries(nbrOfSelected,page)
-    log("postcheck 5 "+fasttext)
-    return(render_template('template.html', data=data, labels=labels, fieldsShow=fieldsShow , fieldsNames=fieldsNames, fasttext=fasttext, deeplearn=deeplearn, human=human, selected=selected, nbrOfSelected=nbrOfSelected, humanLabels=humanLabels, page=page, minPage=minPage, maxPage=maxPage))
+    page, minPage, maxPage = computePageBoundaries(nbrOfSelected,page,pageSize)
+    counter = 0
+    for d in range(0,len(data)):
+        if select(fasttext,deeplearn,human,labels[data[d][0]],labels[data[d][1]],humanLabels[d]):
+            if counter >= pageSize*(page-1) and \
+               counter < pageSize*page: selected[d] = True 
+            counter += 1
+    return(render_template('template.html', data=data, labels=labels, fieldsShow=fieldsShow , fasttext=fasttext, deeplearn=deeplearn, human=human, selected=selected, nbrOfSelected=nbrOfSelected, humanLabels=humanLabels, page=page, minPage=minPage, maxPage=maxPage, pageSize=pageSize, URL=URL, username=username))
 
+app.secret_key = "PLEASEREPLACETHIS"
