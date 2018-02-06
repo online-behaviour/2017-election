@@ -16,17 +16,18 @@ labelPrefix = "__label__"
 for line in sys.stdin:
     tokens = line.split()
     for i in range(0,len(tokens)):
-        if tokens[i].lower() in words: outLine = labelPrefix+tokens[i].lower()
-        else: outLine = labelPrefix+sameTag
-        for j in range(contextSize,0,-1):
-            if i-j < 0: outLine += " "+filler
-            else: outLine += " "+tokens[i-j]
-        if tokens[i].lower() in words: outLine += " "+mask
-        else: outLine += " "+tokens[i]
-        for j in range(0,contextSize):
-            if i+j+1 >= len(tokens): outLine += " "+filler
-            else: outLine += " "+tokens[i+j+1]
-        print(outLine)
+        if tokens[i].lower() in words:
+            if tokens[i].lower() in words: 
+                outLine = labelPrefix+tokens[i].lower()
+            else: outLine = labelPrefix+sameTag
+            for j in range(contextSize,0,-1):
+                if i-j < 0: outLine += " "+filler
+                else: outLine += " "+tokens[i-j]
+            if tokens[i].lower() in words: outLine += " "+mask
+            else: outLine += " "+tokens[i].lower()
+            for j in range(0,contextSize):
+                if i+j+1 >= len(tokens): outLine += " "+filler
+                else: outLine += " "+tokens[i+j+1]
+            print(outLine)
 
 sys.exit(0)
-    
