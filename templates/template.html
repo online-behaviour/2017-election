@@ -81,6 +81,7 @@
             {{ key }}</option>
         {% endfor %}
     </select>
+    <input type="hidden" name="fieldsStatus" id="fieldsStatus" value="{{ fieldsStatus }}" />
     <strong>Page size</strong>:
     <select name="size" onchange="this.form.submit()">
         {% for key in pageSizes %}
@@ -101,7 +102,7 @@
 	{% if p == page %}
 	<strong>{{ p }}</strong>
 	{% else %}
-	<a href="{{ URL }}/?page={{ p }}&fasttext={{ fasttext }}&deeplearn={{ deeplearn }}&human={{ human }}">{{ p }}</a>
+	<a href="{{ URL }}/?page={{ p }}&fasttext={{ fasttext }}&deeplearn={{ deeplearn }}&human={{ human }}&&fieldsStatus={{ fieldsStatus }}">{{ p }}</a>
 	{% endif %}
 	{% endfor %}
     {% if nbrOfSelected > 0 %}
@@ -176,7 +177,7 @@
 	{% if p == page %}
 	<strong>{{ p }}</strong>
 	{% else %}
-	<a href="/?page={{ p }}&fasttext={{ fasttext }}&deeplearn={{ deeplearn }}&human={{ human }}">{{ p }}</a>
+	<a href="{{ URL }}/?page={{ p }}&fasttext={{ fasttext }}&deeplearn={{ deeplearn }}&human={{ human }}&&fieldsStatus={{ fieldsStatus }}">{{ p }}</a>
 	{% endif %}
     {% endfor %}
     <hr>

@@ -15,8 +15,10 @@ import hashlib
 import re
 import sys
 
+# start site-dependent variables
 URL = "http://0.0.0.0:5000/"
 BASEDIR = "/home/erikt/projects/online-behaviour/2017-election"
+# end site-dependent variables
 DATAFILENAME = BASEDIR+"/data/2017-tweets.csv"
 HUMANLABELFILE = BASEDIR+"/data/human-labels.txt"
 USERFILE = BASEDIR+"/data/users.txt"
@@ -28,8 +30,26 @@ labels = {"0":"ERROR","1":"C TRAIL","2":"PROMOTION","3":"C ACTION",
           "4":"VOTE CALL","5":"NEWS","6":"STANCE","7":"CRITIQUE",
           "8":"INPUT","9":"ADVICE", "10":"ACKNOWL","11":"PERSONAL",
           "12":"OTHER","13":"ERROR" }
-fieldsShow = {"Human":True,"FastText":True,"DeepLearn":True,"FastText+":False,"DeepLearn+":False,"Id":False,"Date":False,"User":False,"Tweet":True}
+fieldLabels = [ "Date", "DeepLearn", "DeepLearn+", "FastText", "FastText+", "Human", "Id", "Tweet", "User" ]
+fieldsShow = { "Date":False, "DeepLearn":True, "DeepLearn+":False, "FastText":True, "FastText+":False, "Human":True, "Id":False, "Tweet":True, "User":False }
 nbrOfItems = 0
+
+def useFieldsStatus(fieldsStatus):
+    fieldsShow = {}
+    fieldsStatusInt = int(fieldsStatus)
+    for label in reversed(fieldLabels):
+        newFieldsStatusInt = int(fieldsStatusInt/2)
+        if fieldsStatusInt > 2*newFieldsStatusInt: fieldsShow[label] = True
+        else: fieldsShow[label] = False
+        fieldsStatusInt = newFieldsStatusInt
+    return(fieldsShow)
+
+def getFieldsStatus(fieldsShow):
+    fieldsStatus = 0
+    for label in fieldLabels:
+        fieldsStatus *= 2
+        if fieldsShow[label]: fieldsStatus += 1
+    return(fieldsStatus)
 
 def readData(inFileName):
     data = []
@@ -133,7 +153,10 @@ def select(fasttext,deeplearn,human,labelF,labelD,labelH):
 
 @app.route('/',methods=['GET','POST'])
 def process():
-    if not "username" in session: return(redirect("/login"))
+    global fieldsShow
+    global URL
+
+    if not "username" in session: return(redirect(URL+"login"))
     username = session["username"]
     fasttext = ""
     deeplearn = ""
@@ -143,6 +166,8 @@ def process():
     nbrOfSelected = 0
     pageSize = 10
     formdata = {}
+    changeFieldsStatus = ""
+    fieldsStatus = getFieldsStatus(fieldsShow)
     if request.method == "GET": formdata = request.args
     elif request.method == "POST": formdata = request.form
     for key in formdata:
@@ -152,7 +177,10 @@ def process():
         elif key == "page" and formdata["page"] != "": 
             page = int(formdata["page"])
         elif key == "fields" and formdata["fields"] != "": 
-            fieldsShow[formdata["fields"]] = not fieldsShow[formdata["fields"]]
+            changeFieldsStatus = formdata["fields"]
+        elif key == "fieldsStatus" and formdata["fieldsStatus"] != "": 
+            fieldsStatus = formdata["fieldsStatus"]
+            fieldsShow = useFieldsStatus(fieldsStatus)
         elif key == "size": pageSize = int(formdata["size"])
         elif key == "logout":
             session.pop("username")
@@ -166,6 +194,9 @@ def process():
                     humanLabels[index] = label
                     storeHumanLabel(index,label,username)
         else: pass # unknown key in formdata!
+    if changeFieldsStatus != "":
+        fieldsShow[changeFieldsStatus] = not fieldsShow[changeFieldsStatus]
+        fieldsStatus = getFieldsStatus(fieldsShow)
     for d in range(0,len(data)):
         if select(fasttext,deeplearn,human,labels[data[d][0]],labels[data[d][1]],humanLabels[d]):
             nbrOfSelected += 1
@@ -176,6 +207,6 @@ def process():
             if counter >= pageSize*(page-1) and \
                counter < pageSize*page: selected[d] = True 
             counter += 1
-    return(render_template('template.html', data=data, labels=labels, fieldsShow=fieldsShow , fasttext=fasttext, deeplearn=deeplearn, human=human, selected=selected, nbrOfSelected=nbrOfSelected, humanLabels=humanLabels, page=page, minPage=minPage, maxPage=maxPage, pageSize=pageSize, URL=URL, username=username))
+    return(render_template('template.html', data=data, labels=labels, fieldsShow=fieldsShow , fasttext=fasttext, deeplearn=deeplearn, human=human, selected=selected, nbrOfSelected=nbrOfSelected, humanLabels=humanLabels, page=page, minPage=minPage, maxPage=maxPage, pageSize=pageSize, URL=URL, username=username, fieldsStatus=fieldsStatus))
 
 app.secret_key = "PLEASEREPLACETHIS"
