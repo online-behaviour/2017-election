@@ -9,8 +9,8 @@ from dateutil import parser
 import json
 import sys
 
-STARTDATE = "2017-03-01 00:00:00+00:00"
-ENDDATE = "2017-03-15 23:59:59+00:00"
+STARTDATE = "2017-02-14 00:00:00+00:00"
+ENDDATE = "2017-02-28 23:59:59+00:00"
 
 def filter():
     startDate =  parser.parse(STARTDATE)
