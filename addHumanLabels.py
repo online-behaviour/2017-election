@@ -10,9 +10,12 @@ import sys
 
 COMMAND = sys.argv.pop(0)
 USAGE = "usage: "+COMMAND+" labelFile < dataFile > outFile "
+OFFSET = 1
 SEPARATOR = ","
 INDEXID = 2
 LABELID = 3
+FASTTEXTID = 0
+DEEPLEARNINGID = 1
 TWEETIDID = 4
 DATEID = 5
 USERNAMEID = 6
@@ -28,7 +31,9 @@ UNKNOWN1 = "unknown1"
 UNKNOWN2 = "unknown2"
 UNKNOWN3 = "unknown3"
 LABEL = "label"
-OUTPUTFIELDS = [TWEETID,USERID,USERNAME,PARTY1,TEXT,UNKNOWN1,PARTY2,UNKNOWN2,UNKNOWN3,LABEL,DATE]
+FASTTEXT = "fasttext"
+DEEPLEARNING = "deeplearning"
+OUTPUTFIELDS = [TWEETID,USERID,USERNAME,PARTY1,TEXT,UNKNOWN1,PARTY2,UNKNOWN2,UNKNOWN3,LABEL,DATE,FASTTEXT,DEEPLEARNING]
 LABELIDS = {"":"0","ERROR":"0","C TRAIL":"1","PROMOTION":"2",
             "C ACTION":"3","VOTE CALL":"4","NEWS":"5","STANCE":"6",
             "CRITIQUE":"7", "INPUT":"8","ADVICE":"9","ACKNOWL":"10",
@@ -42,7 +47,7 @@ def processData(labels):
         lineCounter += 1
         index = str(lineCounter)
         if index in labels:
-            data = {LABEL:labels[index],TEXT:row[TWEETTEXTID],TWEETID:row[TWEETIDID],USERNAME:row[USERNAMEID],DATE:row[DATEID]}
+            data = {LABEL:labels[index],TEXT:row[TWEETTEXTID],TWEETID:row[TWEETIDID],USERNAME:row[USERNAMEID],DATE:row[DATEID],FASTTEXT:row[FASTTEXTID],DEEPLEARNING:row[DEEPLEARNINGID]}
             csvwriter.writerow(data)
 
 def readLabels(labelFileName):
@@ -52,7 +57,7 @@ def readLabels(labelFileName):
     labels = {}
     for line in labelFile:
         tokens = line.split()
-        index = tokens[INDEXID] 
+        index = str(int(tokens[INDEXID])+OFFSET)
         labelName = " ".join(tokens[LABELID:])
         labels[index] = LABELIDS[labelName]
     return(labels)
