@@ -16,8 +16,8 @@ import re
 import sys
 
 # start site-dependent variables
-URL = "http://0.0.0.0:5000/"
-BASEDIR = "/home/erikt/projects/online-behaviour/2017-election"
+URL = "http://145.100.58.119/cgi-bin/newsgac/"
+BASEDIR = "/home/cloud/projects/online-behaviour/2017-election"
 # end site-dependent variables
 DATAFILENAME = BASEDIR+"/data/2017-tweets.csv"
 HUMANLABELFILE = BASEDIR+"/data/human-labels.txt"
@@ -74,7 +74,8 @@ def readHumanLabels(humanLabels):
         date = fields.pop(0)
         index = int(fields.pop(0))
         label = " ".join(fields)
-        humanLabels[index] = label
+        if "username" in session and username == session["username"]:
+            humanLabels[index] = label
     inFile.close()
     return(humanLabels)
 
@@ -119,7 +120,6 @@ def computePageBoundaries(nbrOfSelected,page,pageSize):
 
 app = Flask(__name__)
 data, humanLabels = readData(DATAFILENAME)
-humanLabels = readHumanLabels(humanLabels)
 
 def encode(password):
     import random
@@ -153,8 +153,7 @@ def select(fasttext,deeplearn,human,labelF,labelD,labelH):
 
 @app.route('/',methods=['GET','POST'])
 def process():
-    global fieldsShow
-    global URL
+    global fieldsShow,humanLabels
 
     if not "username" in session: return(redirect(URL+"login"))
     username = session["username"]
@@ -167,6 +166,7 @@ def process():
     pageSize = 10
     formdata = {}
     changeFieldsStatus = ""
+    humanLabels = readHumanLabels(humanLabels)
     fieldsStatus = getFieldsStatus(fieldsShow)
     if request.method == "GET": formdata = request.args
     elif request.method == "POST": formdata = request.form
@@ -182,6 +182,7 @@ def process():
             fieldsStatus = formdata["fieldsStatus"]
             fieldsShow = useFieldsStatus(fieldsStatus)
         elif key == "size": pageSize = int(formdata["size"])
+        elif key == "pageSize" and formdata["pageSize"] != "": pageSize = int(formdata["pageSize"])
         elif key == "logout":
             session.pop("username")
             return(redirect(URL))
